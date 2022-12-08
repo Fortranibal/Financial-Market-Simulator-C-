@@ -1,4 +1,4 @@
-# Project: Simulate trading in a stock market
+# Project: Simulate Trading in a Stock Market
 
 Idea contributed by Andrea De Girolamo <andrea.de-girolamo@tum.de> and Michael Pio Basile <michael.basile@tum.de>.
 
