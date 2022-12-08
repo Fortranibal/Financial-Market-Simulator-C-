@@ -22,13 +22,66 @@
 #include <string> //
 #include <unordered_map> //
 #include <cmath> //
-#include <memory>
+#include <memory> //
 #include <algorithm> //
-#include <array> 
+#include <array> //
 #include <random> //
-#include <functional> 
+#include <functional> //
 
-// MATHEMATICAL FUNCTIONS
+
+//***************************************************************************************************************
+//************************************************** CLASES *****************************************************
+//***************************************************************************************************************
+
+// A class representing an asset
+class Assets {
+public:
+  std::string name; //Asset Name. To be later completed with more parameters of the class
+  Assets(std::string name) : name(name) {}  // Assets class constructor
+};
+
+// A class representing a share, inherited from Assets
+class Shares : public Assets {
+public:
+  double start_value;       //Intial Market Value of Share
+  double variance;          //Statistic Parameter 1
+  double price_change;      //Statistic Parameter 2
+  double expected_return;   //Statistic Parameter 3
+
+  Shares(std::string name, double start_value, double variance, 
+  double price_change, double expected_return) : Assets(name), 
+  start_value(start_value), variance(variance), price_change(price_change), 
+  expected_return(expected_return) {}                                           // Shares class constructor
+};
+
+
+
+
+//***************************************************************************************************************
+//************************************************ STRUCTURE ****************************************************
+//***************************************************************************************************************
+
+// Structure with the S&P500 data
+struct SP500Data
+{
+    std::vector<std::string> company;
+
+    // The following variables change over the date, so we should define a vector of vectors
+    std::vector<std::vector<double>> close;
+
+    //At the moment, our expected return & share price stimation only uses dayly close price  
+    // Uncoment if nedded for new fomulation   
+    // std::vector<std::vector<double>> volume;
+    // std::vector<std::vector<double>> open;
+    // std::vector<std::vector<double>> high;
+    // std::vector<std::vector<double>> low;
+    // std::vector<std::vector<double>> volume;
+};
+
+//***************************************************************************************************************
+//****************************************** MATHEMATICAL FUNCTIONS ********************************************
+//***************************************************************************************************************
+
 void MultiplyVectorByScalar(std::vector<int> &v, int k){
 	for_each(v.begin(), v.end(), [k](int &c){ c *= k; });
 }
@@ -43,7 +96,23 @@ double scalar_prod(std::vector<double> v1, std::vector<double> v2){
     return s_prod;
 }
 
+//Population of random parameters [min,max] dimmension 'num' double
+void random_vec( std::vector<double>& num) {
 
+    auto seed = 0;
+    auto min = -1.0;
+    auto max = 1.0;
+
+    std::mt19937 gen(seed);
+
+    // uniform_int_distribution: use the mersenne twister
+    // engine to generate a uniform random distribution over (min, max)
+    std::uniform_real_distribution<double> unif_distrib(min, max);
+   // 3. solution
+   for( auto& elem : num){
+       elem = unif_distrib(gen);
+   }
+}
 
 //***************************************************************************************************************
 //************************************************USER INPUT*****************************************************
@@ -80,10 +149,12 @@ int chooseStrategy(std::vector<std::string> strategies)
     return index;       // Return the chosen strategy
 }
 
+//Ask the user and save the imput companies
 std::vector<std::string> inputCompanies(){
 
     std::string share_names;
-    std::cout << "\n Enter the names of the shares you want to use, without spaces and separated by a comma: ";
+    std::cout << std::endl;
+    std::cout << "Enter the names of the shares you want to use, without spaces and separated by a comma: ";
     std::cin >> share_names;
 
     // Split the input string on the comma separator
@@ -105,7 +176,7 @@ std::vector<std::string> inputCompanies(){
     return selected_shares;
 }
 
-
+//Ask the user and save the final simulation time
 int inputTime() 
 {
     std::cout << "How long do you want the simulation to go for? (days) ";
@@ -115,26 +186,6 @@ int inputTime()
 }
 
 
-// A class representing an asset
-class Assets {
-public:
-  std::string name; //Asset Name. To be later completed with more parameters of the class
-  Assets(std::string name) : name(name) {}  // Assets class constructor
-};
-
-// A class representing a share, inherited from Assets
-class Shares : public Assets {
-public:
-  double start_value;       //Intial Market Value of Share
-  double variance;          //Statistic Parameter 1
-  double price_change;      //Statistic Parameter 2
-  double expected_return;   //Statistic Parameter 3
-
-  Shares(std::string name, double start_value, double variance, 
-  double price_change, double expected_return) : Assets(name), 
-  start_value(start_value), variance(variance), price_change(price_change), 
-  expected_return(expected_return) {}                                           // Shares class constructor
-};
 
 
 
@@ -144,27 +195,7 @@ public:
 //***************************************************************************************************************
 
 
-
-// Structure with the S&P500 data
-struct SP500Data
-{
-    std::vector<std::string> company;
-
-    // The following variables change over the date, so we should define a vector of vectors
-    std::vector<std::vector<double>> close;
-
-    //At the moment, our expected return & share price stimation only uses dayly close price  
-    // Uncoment if nedded for new fomulation   
-    // std::vector<std::vector<double>> volume;
-    // std::vector<std::vector<double>> open;
-    // std::vector<std::vector<double>> high;
-    // std::vector<std::vector<double>> low;
-    // std::vector<std::vector<double>> volume;
-};
-
-
-
-
+//Read the csv and points the data to the structure
 std::unique_ptr<SP500Data> read_from_csv(std::string filename="all_stocks_5yr.csv")
 {
     // Read the data from the csv 
@@ -220,25 +251,8 @@ std::unique_ptr<SP500Data> read_from_csv(std::string filename="all_stocks_5yr.cs
     return data;
 }
 
-//Population of random parameters [min,max] dimmension 'num' double
-void random_vec( std::vector<double>& num) {
 
-    auto seed = 0;
-    auto min = -1.0;
-    auto max = 1.0;
-
-    std::mt19937 gen(seed);
-
-    // uniform_int_distribution: use the mersenne twister
-    // engine to generate a uniform random distribution over (min, max)
-    std::uniform_real_distribution<double> unif_distrib(min, max);
-   // 3. solution
-   for( auto& elem : num){
-       elem = unif_distrib(gen);
-   }
-}
-
-/*Compute gbm estimation over a time 't'. 
+/*Compute geometric braunian motion over a time 't'. 
 Imput: Share parameters double[3]
     S    = Stock price
     μ    = Expected return
@@ -250,16 +264,16 @@ std::vector<double> gbm_2( double S, double nu, double dev, int t_fin) {
     double gbm_operator;
     double delta_S;
     
-    int delta_t = 1; // Time step for iterations. ex = one day. Must be INT
+    int delta_t = 1; // Time step for iterations. actual = one day.
 
     std::vector<double> S_trend;
 
     std::vector<double> eps(t_fin,0);
     random_vec(eps);
-    
+    double correction_par=0.1;
     for(int t = 0; t <= t_fin; t++)
     {
-        gbm_operator = (nu - dev*dev/2)*delta_t + dev*eps[t]*sqrt(delta_t);
+        gbm_operator = (nu - dev*dev/2*correction_par)*delta_t + correction_par*dev*eps[t]*sqrt(delta_t);
         
         S = S * exp(gbm_operator); // Compute S in t+1
 
@@ -269,6 +283,7 @@ std::vector<double> gbm_2( double S, double nu, double dev, int t_fin) {
     return S_trend;
 }
 
+// Compute the normaliced standar deaviation over a data group
 double standar_dev(std::vector<double> data){
 
     double mean;
@@ -285,7 +300,6 @@ double standar_dev(std::vector<double> data){
     for(int i = 0; i<data.size(); ++i){
        opr = (data[i]-mean)*(data[i]-mean) + opr;
     };
-
     
     max_value = std::max_element(data.begin(), data.end());
 
@@ -344,8 +358,6 @@ void name_to_id( std::vector<int>& v_id, std::vector<std::string>& names, std::v
    
 }
 
-
-
 // Compute the market simulation and print the results for each selected share
 void shares_sim(std::vector<int> selected_company_ids, std::vector<std::vector<double>> close,
                 std::vector<std::string> selected_shares, int t_f, std::vector<double> vec_fps){
@@ -379,10 +391,12 @@ void shares_sim(std::vector<int> selected_company_ids, std::vector<std::vector<d
                      << " --> Final price: " << S_trend.back() << std::endl ;
         
         double partial_return = vec_fps[i] * (S_trend.back()-close[selected_company_ids[i]].back()) / close[selected_company_ids[i]].back(); 
-        std::cout << "These are the partial returns: " << partial_return << std::endl;
+        std::cout << "Money invested: " << vec_fps[i] << "$, Partial returns: " << partial_return << "$" << std::endl;
         portfolio_returns += partial_return;
     }
-    std::cout << "Portfolio Returns :\t" << portfolio_returns << std::endl;
+    std::cout << "************************************************** "  << std::endl ;
+    std::cout << "Portfolio Returns :\t" << portfolio_returns << '$' <<std::endl;
+    std::cout << "************************************************** "  << std::endl ;
 }
 
 
@@ -439,25 +453,22 @@ std::vector<double> funds_per_share(std::vector<int> vec_strat, double total_fun
     for (const int target: {1, 2, 3})
     {
         const long int num_items = std::count(vec_strat.cbegin(), vec_strat.cend(), target);
-        std::cout << "number: " << target << ", count: " << num_items << '\n';
+        std::cout << "Strategy " << target << " companies: " << num_items << '\n';
 
         vec_num_items.push_back(num_items);
         opr = selected_strategy[target-1]/double(num_items) * total_funds;
         std::replace(vec_fps.begin(), vec_fps.end(), double(target), opr); 
     }
 
-    // // Check if any of the values in the vector are 0
-    // std::unique_ptr<SP500Data> data_frame;
-
     for (int value : vec_num_items) {
         if (value == 0) {
         // Ask the user to input new values if a 0 is found
-        std::cout << "You haven't followed the strategy, meaning that you didn't choose a minimum of 1 or more stocks per category. \n Reinitiate to run properly, or continue to obtain a different result. \n" << std::endl;//name_to_id(data_frame->company,std::vector<int> selected_company_ids, selected_shares); // Call function
+        std::cout << "\n You haven't followed the strategy, meaning that you didn't choose a minimum of 1 or more stocks per category. \n Reinitiate to run properly, or continue to obtain a different result. \n" << std::endl;//name_to_id(data_frame->company,std::vector<int> selected_company_ids, selected_shares); // Call function
+        
+        system("pause");
         break;
         }
     }
-
-
     return vec_fps;
 }
 
@@ -468,7 +479,6 @@ int main()
     
     // Pointer declaration
     std::unique_ptr<SP500Data> data_frame;
-
     data_frame = read_from_csv();
 
     char rerun;
@@ -517,7 +527,8 @@ int main()
         
         std::vector<int> selected_company_ids;
         std::vector<std::string> selected_shares;
-        system("pause");
+    
+    
 
         // Ask for the companys names and output the a vector with the diferents ID
         name_to_id(selected_company_ids, selected_shares, data_frame->company); 
@@ -525,35 +536,22 @@ int main()
         std::vector<int> s_com_category = name_to_category(selected_shares);
         std::vector<double> vec_fps = funds_per_share(s_com_category, total_funds, strategy);
 
-        for (int i = 0; i < selected_shares.size(); i++)
-        {
-            std::cout << "selected_shares " << selected_shares[i] <<std::endl;
-            std::cout << "selected_company_ids "<< selected_company_ids[i] << std::endl;
-            std::cout << "fps "<< vec_fps[i] << std::endl;
-        }
-
-
-
         
-        system("pause");
+        //Verification Loop
+        // for (int i = 0; i < selected_shares.size(); i++)
+        // {
+        //     std::cout << "selected_shares " << selected_shares[i] <<std::endl;
+        //     std::cout << "selected_company_ids "<< selected_company_ids[i] << std::endl;
+        //     std::cout << "fps "<< vec_fps[i] << std::endl;
+        // }
+        
         
         // Ask for the time that the simulation would run
         int t_f;
         t_f = inputTime(); 
-        
-        
-
-
-        
-        for (int i = 0; i < selected_shares.size(); i++)
-        {
-            std::cout << "selected_shares " << selected_shares[i] <<std::endl;
-            std::cout << "selected_company_ids "<< selected_company_ids[i] << std::endl;
-            std::cout << "fps "<< vec_fps[i] << std::endl;
-        }
-
+    
         // Run the market simulation and print the values
-        std::cout << "With the current assets and strategy, your portfolio is: " << std::endl;
+        std::cout << "\n With the current assets and strategy, your portfolio is: \n" << std::endl;
         shares_sim(selected_company_ids, data_frame->close, selected_shares, t_f, vec_fps);
 
         
